@@ -30,7 +30,7 @@ import java.util.TimeZone;
 @EnableScheduling
 @EnableTransactionManagement
 @EnableConfigurationProperties
-public class DigitalLibraryApplication {
+public class LibraryApplication {
 
 	/**
 	 * Main method to start the Digital Library application
@@ -38,11 +38,12 @@ public class DigitalLibraryApplication {
 	public static void main(String[] args) {
 		// Set system properties before starting the application
 		System.setProperty("spring.application.name", "Digital Library Management System");
+		System.setProperty("spring.devtools.restart.enabled", "false");
 		System.setProperty("spring.profiles.active",
 				System.getProperty("spring.profiles.active", "dev"));
 
 		try {
-			SpringApplication app = new SpringApplication(DigitalLibraryApplication.class);
+			SpringApplication app = new SpringApplication(LibraryApplication.class);
 
 			// Add startup banner
 			app.setBanner((environment, sourceClass, out) -> {
@@ -64,7 +65,7 @@ public class DigitalLibraryApplication {
 
 			System.out.println("\n🚀 Digital Library System started successfully!");
 			System.out.println("📍 Application URL: http://localhost:" + port + contextPath);
-			System.out.println("📊 API Documentation: http://localhost:" + port + contextPath + "/api");
+			System.out.println("📊 API Documentation: http://localhost:" + port + contextPath + "api");
 			System.out.println("💾 Database: " + context.getEnvironment().getProperty("spring.datasource.url"));
 			System.out.println("🔧 Active Profile: " + String.join(",", context.getEnvironment().getActiveProfiles()));
 

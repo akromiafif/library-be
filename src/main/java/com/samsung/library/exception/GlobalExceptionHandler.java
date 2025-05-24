@@ -4,6 +4,7 @@ import com.samsung.library.dto.ApiResponseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -205,7 +206,7 @@ public class GlobalExceptionHandler {
 
         String supportedMethods = ex.getSupportedHttpMethods() != null ?
                 ex.getSupportedHttpMethods().stream()
-                        .map(Enum::toString)
+                        .map(HttpMethod::name)  // Changed from Enum::toString to HttpMethod::name
                         .collect(Collectors.joining(", ")) : "None";
 
         logger.warn("Unsupported HTTP method {} for request {}. Supported methods: {}",

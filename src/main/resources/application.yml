@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: Digital Library Management System
+
+  profiles:
+    active: dev
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/digital_library?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Default to validate for safety
+    show-sql: false  # Disable in production
+    open-in-view: false  # Disable to avoid warning
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+logging:
+  level:
+    root: INFO
+    com.samsung.library: INFO
