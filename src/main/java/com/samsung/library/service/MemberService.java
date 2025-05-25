@@ -49,7 +49,7 @@ public class MemberService {
     @Transactional(readOnly = true)
     public List<MemberDTO> getAllMembers() {
         return memberRepository.findAll().stream()
-                .map(this::convertToDTO)
+                .map(this::convertToDTOWithBorrowedBooks)
                 .collect(Collectors.toList());
     }
 
