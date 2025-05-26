@@ -2,7 +2,6 @@
 package com.samsung.library.service;
 
 import com.samsung.library.dto.BorrowedBookDTO;
-import com.samsung.library.dto.SearchRequestDTO;
 import com.samsung.library.model.Book;
 import com.samsung.library.model.BorrowedBook;
 import com.samsung.library.model.BorrowStatus;
@@ -152,66 +151,6 @@ public class BorrowedBookService {
     }
 
     /**
-     * Search borrowed books with multiple criteria
-     */
-    @Transactional(readOnly = true)
-    public List<BorrowedBookDTO> searchBorrowedBooks(SearchRequestDTO searchRequest) {
-        return borrowedBookRepository.searchBorrowedBooks(
-                        searchRequest.getBookTitle(),
-                        searchRequest.getMemberName(),
-                        searchRequest.getBorrowDate(),
-                        searchRequest.getStatus()
-                ).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get all borrowed books by a specific member
-     */
-    @Transactional(readOnly = true)
-    public List<BorrowedBookDTO> getBorrowedBooksByMember(Long memberId) {
-        // Verify member exists
-        if (!memberRepository.existsById(memberId)) {
-            throw new RuntimeException("Member not found with ID: " + memberId);
-        }
-
-        return borrowedBookRepository.findByMemberId(memberId).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get currently borrowed books by member (not yet returned)
-     */
-    @Transactional(readOnly = true)
-    public List<BorrowedBookDTO> getCurrentBorrowingsByMember(Long memberId) {
-        return borrowedBookRepository.findByMemberIdAndStatus(memberId, BorrowStatus.BORROWED).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get overdue books
-     */
-    @Transactional(readOnly = true)
-    public List<BorrowedBookDTO> getOverdueBooks() {
-        return borrowedBookRepository.findOverdueBooks(LocalDate.now()).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get books due today
-     */
-    @Transactional(readOnly = true)
-    public List<BorrowedBookDTO> getBooksDueToday() {
-        return borrowedBookRepository.findBooksDueToday(LocalDate.now()).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Update overdue books status and calculate fines (scheduled task)
      */
     public void updateOverdueBooks() {
@@ -229,36 +168,6 @@ public class BorrowedBookService {
             borrowedBookRepository.saveAll(overdueBooks);
             System.out.println("Updated " + overdueBooks.size() + " overdue books");
         }
-    }
-
-    /**
-     * Extend due date for a borrowed book
-     */
-    public BorrowedBookDTO extendDueDate(Long borrowedBookId, int extensionDays) {
-        BorrowedBook borrowedBook = borrowedBookRepository.findByIdWithDetails(borrowedBookId)
-                .orElseThrow(() -> new RuntimeException("Borrowed book record not found with ID: " + borrowedBookId));
-
-        // Validate extension rules
-        if (borrowedBook.getStatus() != BorrowStatus.BORROWED) {
-            throw new RuntimeException("Cannot extend due date for book that is not currently borrowed");
-        }
-
-        if (extensionDays <= 0 || extensionDays > 14) {
-            throw new RuntimeException("Extension days must be between 1 and 14");
-        }
-
-        // Extend due date
-        LocalDate newDueDate = borrowedBook.getDueDate().plusDays(extensionDays);
-        borrowedBook.setDueDate(newDueDate);
-
-        // Reset status if book was overdue
-        if (borrowedBook.getStatus() == BorrowStatus.OVERDUE && newDueDate.isAfter(LocalDate.now())) {
-            borrowedBook.setStatus(BorrowStatus.BORROWED);
-            borrowedBook.setFineAmount(0.0); // Reset fine
-        }
-
-        BorrowedBook updatedRecord = borrowedBookRepository.save(borrowedBook);
-        return convertToDTO(updatedRecord);
     }
 
     /**

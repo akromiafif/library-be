@@ -92,31 +92,14 @@ public class AuthorService {
 
     // Convert entity to DTO
     private AuthorDTO convertToDTO(Author author) {
-        AuthorDTO dto = new AuthorDTO(
-                author.getName(),
-                author.getBiography(),
-                author.getBirthYear(),
-                author.getNationality()
-        );
-
-        // 2. Set fields not covered by that constructor
+        AuthorDTO dto = new AuthorDTO();
         dto.setId(author.getId());
+        dto.setName(author.getName());
+        dto.setBiography(author.getBiography());
+        dto.setBirthYear(author.getBirthYear());
+        dto.setNationality(author.getNationality());
         dto.setCreatedAt(author.getCreatedAt());
         dto.setUpdatedAt(author.getUpdatedAt());
-
-        // 3. Map and set the books list
-        List<BookSummaryDTO> bookDtos = author.getBooks().stream()
-                .map(book -> new BookSummaryDTO(
-                        book.getId(),
-                        book.getTitle(),
-                        book.getCategory(),
-                        book.getPublishingYear(),
-                        book.getAvailableCopies(),
-                        book.getTotalCopies()
-                ))
-                .collect(Collectors.toList());
-        dto.setBooks(bookDtos);
-
         return dto;
     }
 

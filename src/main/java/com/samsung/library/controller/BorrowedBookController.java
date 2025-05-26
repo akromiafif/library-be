@@ -69,27 +69,6 @@ public class BorrowedBookController {
         }
     }
 
-    /**
-     * Extend due date for a borrowed book
-     * PUT /api/borrowed-books/{id}/extend?days={extensionDays}
-     */
-    @PutMapping("/{id}/extend")
-    public ResponseEntity<ApiResponseDTO<BorrowedBookDTO>> extendDueDate(
-            @PathVariable Long id,
-            @RequestParam @Min(value = 1, message = "Extension days must be at least 1")
-            @Max(value = 14, message = "Extension days cannot exceed 14") int days) {
-        try {
-            BorrowedBookDTO extendedBook = borrowedBookService.extendDueDate(id, days);
-            return ResponseEntity.ok(ApiResponseDTO.success(
-                    "Due date extended by " + days + " day(s) successfully", extendedBook));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponseDTO.error("Failed to extend due date: " + e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponseDTO.error("An unexpected error occurred while extending due date"));
-        }
-    }
 
     /**
      * Get all borrowed books with optional pagination
@@ -184,85 +163,6 @@ public class BorrowedBookController {
         }
     }
 
-    /**
-     * Advanced search for borrowed books with multiple criteria
-     * POST /api/borrowed-books/search
-     */
-    @PostMapping("/search")
-    public ResponseEntity<ApiResponseDTO<List<BorrowedBookDTO>>> searchBorrowedBooks(
-            @RequestBody SearchRequestDTO searchRequest) {
-        try {
-            List<BorrowedBookDTO> borrowedBooks = borrowedBookService.searchBorrowedBooks(searchRequest);
-            String message = borrowedBooks.isEmpty() ?
-                    "No borrowed books found matching the criteria" :
-                    "Found " + borrowedBooks.size() + " borrowed book(s) matching the criteria";
-            return ResponseEntity.ok(ApiResponseDTO.success(message, borrowedBooks));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponseDTO.error("Failed to search borrowed books: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Quick search borrowed books by book title or member name
-     * GET /api/borrowed-books/search?q={query}
-     */
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponseDTO<List<BorrowedBookDTO>>> quickSearchBorrowedBooks(
-            @RequestParam("q") String query) {
-        try {
-            SearchRequestDTO searchRequest = new SearchRequestDTO();
-            searchRequest.setBookTitle(query);
-            searchRequest.setMemberName(query);
-
-            List<BorrowedBookDTO> borrowedBooks = borrowedBookService.searchBorrowedBooks(searchRequest);
-            return ResponseEntity.ok(ApiResponseDTO.success(
-                    "Found " + borrowedBooks.size() + " result(s) for: " + query, borrowedBooks));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponseDTO.error("Failed to search borrowed books: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Get all borrowed books by a specific member
-     * GET /api/borrowed-books/member/{memberId}
-     */
-    @GetMapping("/member/{memberId}")
-    public ResponseEntity<ApiResponseDTO<List<BorrowedBookDTO>>> getBorrowedBooksByMember(
-            @PathVariable Long memberId) {
-        try {
-            List<BorrowedBookDTO> borrowedBooks = borrowedBookService.getBorrowedBooksByMember(memberId);
-            return ResponseEntity.ok(ApiResponseDTO.success(
-                    "Retrieved " + borrowedBooks.size() + " borrowed book(s) for member", borrowedBooks));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponseDTO.error("Failed to retrieve member's borrowed books: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Get currently borrowed books by a specific member (not yet returned)
-     * GET /api/borrowed-books/member/{memberId}/current
-     */
-    @GetMapping("/member/{memberId}/current")
-    public ResponseEntity<ApiResponseDTO<List<BorrowedBookDTO>>> getCurrentBorrowingsByMember(
-            @PathVariable Long memberId) {
-        try {
-            List<BorrowedBookDTO> currentBorrowings = borrowedBookService.getCurrentBorrowingsByMember(memberId);
-            return ResponseEntity.ok(ApiResponseDTO.success(
-                    "Member has " + currentBorrowings.size() + " book(s) currently borrowed", currentBorrowings));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponseDTO.error("Failed to retrieve member's current borrowings: " + e.getMessage()));
-        }
-    }
 
     /**
      * Calculate total outstanding fines for a member
@@ -283,101 +183,6 @@ public class BorrowedBookController {
         }
     }
 
-    /**
-     * Get overdue books
-     * GET /api/borrowed-books/overdue
-     */
-    @GetMapping("/overdue")
-    public ResponseEntity<ApiResponseDTO<List<BorrowedBookDTO>>> getOverdueBooks() {
-        try {
-            List<BorrowedBookDTO> overdueBooks = borrowedBookService.getOverdueBooks();
-            String message = overdueBooks.isEmpty() ?
-                    "No overdue books found" :
-                    "Found " + overdueBooks.size() + " overdue book(s)";
-            return ResponseEntity.ok(ApiResponseDTO.success(message, overdueBooks));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponseDTO.error("Failed to retrieve overdue books: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Get books due today
-     * GET /api/borrowed-books/due-today
-     */
-    @GetMapping("/due-today")
-    public ResponseEntity<ApiResponseDTO<List<BorrowedBookDTO>>> getBooksDueToday() {
-        try {
-            List<BorrowedBookDTO> booksDueToday = borrowedBookService.getBooksDueToday();
-            String message = booksDueToday.isEmpty() ?
-                    "No books due today" :
-                    booksDueToday.size() + " book(s) due today";
-            return ResponseEntity.ok(ApiResponseDTO.success(message, booksDueToday));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponseDTO.error("Failed to retrieve books due today: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Get books due within specified days
-     * GET /api/borrowed-books/due-within?days=3
-     */
-    @GetMapping("/due-within")
-    public ResponseEntity<ApiResponseDTO<List<BorrowedBookDTO>>> getBooksDueWithin(
-            @RequestParam @Min(value = 1, message = "Days must be at least 1")
-            @Max(value = 30, message = "Days cannot exceed 30") int days) {
-        try {
-            // Create search request for books due within specified days
-            SearchRequestDTO searchRequest = new SearchRequestDTO();
-            searchRequest.setStatus(BorrowStatus.BORROWED);
-
-            List<BorrowedBookDTO> allBorrowed = borrowedBookService.searchBorrowedBooks(searchRequest);
-            LocalDate targetDate = LocalDate.now().plusDays(days);
-
-            List<BorrowedBookDTO> dueWithinDays = allBorrowed.stream()
-                    .filter(book -> book.getDueDate() != null &&
-                            !book.getDueDate().isAfter(targetDate) &&
-                            !book.getDueDate().isBefore(LocalDate.now()))
-                    .toList();
-
-            String message = dueWithinDays.isEmpty() ?
-                    "No books due within " + days + " day(s)" :
-                    dueWithinDays.size() + " book(s) due within " + days + " day(s)";
-            return ResponseEntity.ok(ApiResponseDTO.success(message, dueWithinDays));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponseDTO.error("Failed to retrieve books due within specified days: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Get borrowed books by status
-     * GET /api/borrowed-books/status/{status}
-     */
-    @GetMapping("/status/{status}")
-    public ResponseEntity<ApiResponseDTO<List<BorrowedBookDTO>>> getBorrowedBooksByStatus(
-            @PathVariable String status) {
-        try {
-            BorrowStatus borrowStatus;
-            try {
-                borrowStatus = BorrowStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponseDTO.error("Invalid status. Valid statuses are: BORROWED, RETURNED, OVERDUE, LOST, DAMAGED"));
-            }
-
-            SearchRequestDTO searchRequest = new SearchRequestDTO();
-            searchRequest.setStatus(borrowStatus);
-
-            List<BorrowedBookDTO> borrowedBooks = borrowedBookService.searchBorrowedBooks(searchRequest);
-            return ResponseEntity.ok(ApiResponseDTO.success(
-                    "Found " + borrowedBooks.size() + " book(s) with status: " + status.toUpperCase(), borrowedBooks));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponseDTO.error("Failed to retrieve books by status: " + e.getMessage()));
-        }
-    }
 
     /**
      * Get borrowed books by date range
@@ -413,21 +218,6 @@ public class BorrowedBookController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponseDTO.error("Failed to retrieve books by date range: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Update overdue books status (maintenance endpoint)
-     * PUT /api/borrowed-books/maintenance/update-overdue
-     */
-    @PutMapping("/maintenance/update-overdue")
-    public ResponseEntity<ApiResponseDTO<Void>> updateOverdueBooks() {
-        try {
-            borrowedBookService.updateOverdueBooks();
-            return ResponseEntity.ok(ApiResponseDTO.success("Overdue books status updated successfully", null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponseDTO.error("Failed to update overdue books: " + e.getMessage()));
         }
     }
 
