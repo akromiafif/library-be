@@ -15,7 +15,7 @@ services:
       MYSQL_DATABASE: digital_library
       MYSQL_ROOT_PASSWORD: root
     ports:
-      - "3038:3306"  # External:Internal port mapping
+      - "3308:3306"  # External:Internal port mapping
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
