@@ -1,0 +1,62 @@
+
+# ==========================================
+# docker-compose.yml
+# ==========================================
+
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: library-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: digital_library
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3038:3306"  # External:Internal port mapping
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - library-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Spring Boot Application
+  app:
+    build: .
+    container_name: library-app
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/digital_library?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: false
+      # AWS EC2 specific settings
+      LOGGING_LEVEL_COM_DIGITALLIBRARY: INFO
+      SERVER_ERROR_INCLUDE_STACKTRACE: never
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+    ports:
+      - "5051:8080"  # External:Internal port mapping
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - library-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  library-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
